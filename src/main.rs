@@ -40,7 +40,7 @@ fn main() {
 
 		for (_, stem) in paths_stems.iter().skip(1) {
 			if stem.len() <= test_str.len() {
-				break 'name_loop;
+				continue 'name_loop;
 			}
 
 			if !stem.starts_with(test_str) {
