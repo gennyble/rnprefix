@@ -37,7 +37,7 @@ fn main() {
 
 	'name_loop: for upper in (1..=first_name.len()).rev() {
 		let test_str = &first_name[0..upper];
-			println!("{}", test_str);
+
 		for (_, stem) in paths_stems.iter().skip(1) {
 			if stem.len() <= test_str.len() {
 				break 'name_loop;
@@ -50,6 +50,7 @@ fn main() {
 
 		match rename_is_okay(&paths_stems, test_str) {
 			Ok(do_rename) => {
+				println!();
 				if do_rename {
 					rename_files(paths_stems, test_str);
 					return;
