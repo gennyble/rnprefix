@@ -1,27 +1,27 @@
 use std::path::PathBuf;
 use std::process;
 use std::{
-    env,
-    io::{self, Write},
-    str::FromStr,
+	env,
+	io::{self, Write},
+	str::FromStr,
 };
 
 fn main() {
-    let args: Vec<String> = env::args().skip(1).collect();
+	let args: Vec<String> = env::args().skip(1).collect();
 
-    if args.len() < 2 {
-        eprintln!("Usage: rnprefix FILE FILE...\n");
-        process::exit(1);
-    }
+	if args.len() < 2 {
+		eprintln!("Usage: rnprefix FILE FILE...\n");
+		process::exit(1);
+	}
 
-    let paths: Vec<PathBuf> = args
-        .into_iter()
-        .map(|filename| {
-            PathBuf::from_str(&filename).expect(&format!("'{}' is not a valid filename!", filename))
-        })
-        .collect();
+	let paths: Vec<PathBuf> = args
+		.into_iter()
+		.map(|filename| {
+			PathBuf::from_str(&filename).expect(&format!("'{}' is not a valid filename!", filename))
+		})
+		.collect();
 
-    #[rustfmt::skip]
+	#[rustfmt::skip]
 	let paths_stems: Vec<(PathBuf, String)> = paths.into_iter().map(|path| {
 		if !path.exists() {
 			eprintln!("'{}' does not exist or cannot be accessed due to permissions!", path.to_str().unwrap());
@@ -45,102 +45,102 @@ fn main() {
 		)
 	}).collect();
 
-    let first_name = paths_stems[0].1.clone();
+	let first_name = paths_stems[0].1.clone();
 
-    'name_loop: for upper in (1..=first_name.len()).rev() {
-        let test_str = &first_name[0..upper];
+	'name_loop: for upper in (1..=first_name.len()).rev() {
+		let test_str = &first_name[0..upper];
 
-        for (_, stem) in paths_stems.iter().skip(1) {
-            if stem.len() <= test_str.len() {
-                continue 'name_loop;
-            }
+		for (_, stem) in paths_stems.iter().skip(1) {
+			if stem.len() <= test_str.len() {
+				continue 'name_loop;
+			}
 
-            if !stem.starts_with(test_str) {
-                continue 'name_loop;
-            }
-        }
+			if !stem.starts_with(test_str) {
+				continue 'name_loop;
+			}
+		}
 
-        match rename_is_okay(&paths_stems, test_str) {
-            Ok(do_rename) => {
-                println!();
-                if do_rename {
-                    rename_files(paths_stems, test_str);
-                    return;
-                }
-            }
-            Err(e) => {
-                panic!("{}", e)
-            }
-        }
-    }
+		match rename_is_okay(&paths_stems, test_str) {
+			Ok(do_rename) => {
+				println!();
+				if do_rename {
+					rename_files(paths_stems, test_str);
+					return;
+				}
+			}
+			Err(e) => {
+				panic!("{}", e)
+			}
+		}
+	}
 
-    println!("Could not find a prefix!");
+	println!("Could not find a prefix!");
 }
 
 fn rename_is_okay(paths_stems: &Vec<(PathBuf, String)>, prefix: &str) -> io::Result<bool> {
-    // Find the longest filename for dispaly purposes
-    let mut longest_stem = 0;
-    for (_, stem) in paths_stems {
-        longest_stem = longest_stem.max(stem.len())
-    }
+	// Find the longest filename for dispaly purposes
+	let mut longest_stem = 0;
+	for (_, stem) in paths_stems {
+		longest_stem = longest_stem.max(stem.len())
+	}
 
-    for (_, stem) in paths_stems {
-        println!(
-            "{:min$} => {}",
-            stem,
-            stem.strip_prefix(prefix).unwrap(),
-            min = longest_stem
-        )
-    }
-    println!("Prefix is '{}'", prefix);
+	for (_, stem) in paths_stems {
+		println!(
+			"{:min$} => {}",
+			stem,
+			stem.strip_prefix(prefix).unwrap(),
+			min = longest_stem
+		)
+	}
+	println!("Prefix is '{}'", prefix);
 
-    let mut buffer = String::new();
-    loop {
-        print!("Are these names okay? (y/n) ");
-        io::stdout().flush().expect("Failed to flush stdout!");
+	let mut buffer = String::new();
+	loop {
+		print!("Are these names okay? (y/n) ");
+		io::stdout().flush().expect("Failed to flush stdout!");
 
-        match io::stdin().read_line(&mut buffer) {
-            Ok(_) => (),
-            Err(e) => {
-                return Err(e);
-            }
-        }
+		match io::stdin().read_line(&mut buffer) {
+			Ok(_) => (),
+			Err(e) => {
+				return Err(e);
+			}
+		}
 
-        let input = buffer.to_lowercase();
-        let input = input.trim();
+		let input = buffer.to_lowercase();
+		let input = input.trim();
 
-        if input == "y" {
-            return Ok(true);
-        } else if input == "n" {
-            return Ok(false);
-        } else {
-            println!("Please answer with a single 'y' for yes, or 'n' for no");
-        }
-    }
+		if input == "y" {
+			return Ok(true);
+		} else if input == "n" {
+			return Ok(false);
+		} else {
+			println!("Please answer with a single 'y' for yes, or 'n' for no");
+		}
+	}
 }
 
 fn rename_files(paths_stems: Vec<(PathBuf, String)>, prefix: &str) {
-    for (path, _) in paths_stems {
-        let new_name = path
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .strip_prefix(prefix)
-            .unwrap();
-        let mut new_path = path.clone();
-        new_path.set_file_name(new_name);
-        match std::fs::rename(&path, &new_path) {
-            Ok(_) => {
-                println!(
-                    "Moved {} to {}",
-                    path.to_str().unwrap(),
-                    new_path.to_str().unwrap()
-                )
-            }
-            Err(e) => {
-                println!("Failed to move {}!\nError: {}", path.to_str().unwrap(), e)
-            }
-        }
-    }
+	for (path, _) in paths_stems {
+		let new_name = path
+			.file_name()
+			.unwrap()
+			.to_str()
+			.unwrap()
+			.strip_prefix(prefix)
+			.unwrap();
+		let mut new_path = path.clone();
+		new_path.set_file_name(new_name);
+		match std::fs::rename(&path, &new_path) {
+			Ok(_) => {
+				println!(
+					"Moved {} to {}",
+					path.to_str().unwrap(),
+					new_path.to_str().unwrap()
+				)
+			}
+			Err(e) => {
+				println!("Failed to move {}!\nError: {}", path.to_str().unwrap(), e)
+			}
+		}
+	}
 }

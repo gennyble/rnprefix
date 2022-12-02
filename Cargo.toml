@@ -1,7 +1,7 @@
 [package]
 name = "rnprefix"
 version = "1.0.0"
-authors = ["Genevive <gen@nyble.dev>"]
+authors = ["Genny Z <gen@nyble.dev>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
