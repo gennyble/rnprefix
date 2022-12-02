@@ -3,8 +3,9 @@ use std::process;
 use std::{
 	env,
 	io::{self, Write},
-	str::FromStr,
 };
+
+use rnprefix::{Rnprefix, TypedFile};
 
 fn main() {
 	let args: Vec<String> = env::args().skip(1).collect();
@@ -14,57 +15,15 @@ fn main() {
 		process::exit(1);
 	}
 
-	let paths: Vec<PathBuf> = args
-		.into_iter()
-		.map(|filename| {
-			PathBuf::from_str(&filename).expect(&format!("'{}' is not a valid filename!", filename))
-		})
-		.collect();
+	let rn = Rnprefix::new(args.into_iter()).unwrap();
+	let prefixes = rn.prefixes();
 
-	#[rustfmt::skip]
-	let paths_stems: Vec<(PathBuf, String)> = paths.into_iter().map(|path| {
-		if !path.exists() {
-			eprintln!("'{}' does not exist or cannot be accessed due to permissions!", path.to_str().unwrap());
-			process::exit(1);
-		}
-
-		if path.is_dir() {
-			eprintln!("'{}' is a directory! We only want files, sorry!", path.to_str().unwrap());
-			process::exit(1);
-		}
-
-		if !path.is_file() {
-			eprintln!("'{}' is not a file, not a directory, but exists? What's going on?", path.to_str().unwrap());
-			process::exit(1);
-		}
-
-		let stem = path.file_stem().unwrap().to_str().unwrap().to_string();
-		(
-			path,
-			stem
-		)
-	}).collect();
-
-	let first_name = paths_stems[0].1.clone();
-
-	'name_loop: for upper in (1..=first_name.len()).rev() {
-		let test_str = &first_name[0..upper];
-
-		for (_, stem) in paths_stems.iter().skip(1) {
-			if stem.len() <= test_str.len() {
-				continue 'name_loop;
-			}
-
-			if !stem.starts_with(test_str) {
-				continue 'name_loop;
-			}
-		}
-
-		match rename_is_okay(&paths_stems, test_str) {
+	for prefix in prefixes {
+		match rename_is_okay(rn.files(), prefix) {
 			Ok(do_rename) => {
 				println!();
 				if do_rename {
-					rename_files(paths_stems, test_str);
+					rename_files(rn.files(), prefix);
 					return;
 				}
 			}
@@ -77,18 +36,18 @@ fn main() {
 	println!("Could not find a prefix!");
 }
 
-fn rename_is_okay(paths_stems: &Vec<(PathBuf, String)>, prefix: &str) -> io::Result<bool> {
+fn rename_is_okay(files: &[TypedFile], prefix: &str) -> io::Result<bool> {
 	// Find the longest filename for dispaly purposes
 	let mut longest_stem = 0;
-	for (_, stem) in paths_stems {
-		longest_stem = longest_stem.max(stem.len())
+	for file in files {
+		longest_stem = longest_stem.max(file.name.len())
 	}
 
-	for (_, stem) in paths_stems {
+	for file in files {
 		println!(
 			"{:min$} => {}",
-			stem,
-			stem.strip_prefix(prefix).unwrap(),
+			file.name,
+			file.name.strip_prefix(prefix).unwrap(),
 			min = longest_stem
 		)
 	}
@@ -119,28 +78,64 @@ fn rename_is_okay(paths_stems: &Vec<(PathBuf, String)>, prefix: &str) -> io::Res
 	}
 }
 
-fn rename_files(paths_stems: Vec<(PathBuf, String)>, prefix: &str) {
-	for (path, _) in paths_stems {
-		let new_name = path
-			.file_name()
-			.unwrap()
-			.to_str()
-			.unwrap()
-			.strip_prefix(prefix)
-			.unwrap();
-		let mut new_path = path.clone();
-		new_path.set_file_name(new_name);
-		match std::fs::rename(&path, &new_path) {
+fn rename_files(files: &[TypedFile], prefix: &str) {
+	for file in files {
+		let new_name = file.name.strip_prefix(prefix).unwrap();
+		let new_path = if let Some(parent) = file.parent.as_ref() {
+			parent.clone().join(new_name)
+		} else {
+			PathBuf::from(new_name)
+		};
+
+		match std::fs::rename(file.path(), &new_path) {
 			Ok(_) => {
 				println!(
 					"Moved {} to {}",
-					path.to_str().unwrap(),
+					file.path().to_str().unwrap(),
 					new_path.to_str().unwrap()
 				)
 			}
 			Err(e) => {
-				println!("Failed to move {}!\nError: {}", path.to_str().unwrap(), e)
+				println!(
+					"Failed to move {}!\nError: {}",
+					file.path().to_str().unwrap(),
+					e
+				)
 			}
 		}
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use rnprefix::{Rnprefix, TypedFile};
+
+	fn make_rn() -> Rnprefix {
+		macro_rules! typed {
+			($name:literal) => {
+				TypedFile {
+					parent: None,
+					name: String::from($name),
+				}
+			};
+		}
+
+		let typed = vec![
+			typed!("PREFIX One"),
+			typed!("PREFIX Two"),
+			typed!("PREFIX Three"),
+		];
+
+		Rnprefix { files: typed }
+	}
+
+	#[test]
+	fn finds_prefix() {
+		let rn = make_rn();
+
+		let prefixes = vec!["PREFIX ", "PREFIX", "PREFI", "PREF", "PRE", "PR", "P"];
+		let actual: Vec<&str> = rn.prefixes().collect();
+
+		assert_eq!(prefixes, actual)
 	}
 }
