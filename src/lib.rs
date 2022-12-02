@@ -1,6 +1,4 @@
 use std::{
-	borrow::Cow,
-	ffi::{OsStr, OsString},
 	fmt,
 	path::{Path, PathBuf},
 };
@@ -101,6 +99,12 @@ impl<'r> Iterator for Prefixes<'r> {
 			Some(&self.name[0..self.offset])
 		}
 	}
+}
+
+pub struct Suffixes<'r> {
+	rn: &'r Rnprefix,
+	name: &'r str,
+	offset: usize,
 }
 
 pub struct TypedFile {

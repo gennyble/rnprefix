@@ -1,6 +1,6 @@
 # rnprefix
 A program to remove file name prefixes. I made this because I lost my shell
-script to rename files that come from bandcmap and I was *not* going to do it
+script to rename files that come from bandcamp and I was *not* going to do it
 by hand.
 
 Let's say you bought an album, Album, from the band Band and it has 4 songs. The
@@ -23,7 +23,7 @@ Prefix is 'Band - Album - 0'
 Are these names okay? (y/n)
 ```
 
-Enter `n`, hit enter, and it'll try with the next character down, giving
+Type `n`, hit enter, and it'll try with the next character down, giving
 `Band - Album - `, which is exactly what I'd want. Say yes and the files
 will be renamed and you'll have a beautiful collection of files that look like:
 ```
