@@ -18,12 +18,12 @@ impl Rnprefix {
 	{
 		let mut file_vec = vec![];
 
-		if file_vec.len() == 0 {
-			return Err(Error::NoFiles);
-		}
-
 		for pbuf in files {
 			file_vec.push(TypedFile::new(pbuf.into())?);
+		}
+
+		if file_vec.len() == 0 {
+			return Err(Error::NoFiles);
 		}
 
 		Ok(Self { files: file_vec })
